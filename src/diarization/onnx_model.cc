@@ -13,13 +13,13 @@
 // limitations under the License.
 
 #include <sstream>
-
 #include "diarization/onnx_model.h"
-
 #include "glog/logging.h"
 
 Ort::Env OnnxModel::env_ = Ort::Env(ORT_LOGGING_LEVEL_WARNING, "");
 Ort::SessionOptions OnnxModel::session_options_ = Ort::SessionOptions();
+static char input_node_ptr_[3][32];
+static char output_node_ptr_[3][32];
 
 void OnnxModel::InitEngineThreads(int num_threads) {
   session_options_.SetIntraOpNumThreads(num_threads);
@@ -56,6 +56,7 @@ OnnxModel::OnnxModel(const std::string& model_path) {
     LOG(INFO) << "Input names[" << i << "]: " << input_name.get();
     input_node_names_[i] = (const char *)&input_node_ptr_[i];
   }
+
   // Output info
   num_nodes = session_->GetOutputCount();
   output_node_names_.resize(num_nodes);

@@ -33,8 +33,6 @@ class OnnxModel {
   Ort::MemoryInfo memory_info_ =
       Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeCPU);
 
-  char input_node_ptr_[3][32];
-  char output_node_ptr_[3][32];
   std::vector<const char*> input_node_names_;
   std::vector<const char*> output_node_names_;
 };
