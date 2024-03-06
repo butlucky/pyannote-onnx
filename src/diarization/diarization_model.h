@@ -22,7 +22,7 @@
 class DiarizationModel : public OnnxModel {
  public:
   DiarizationModel(const std::string& model_path, float threshold,
-                   float max_dur);
+                   float max_dur, float min_seg);
 
   int num_speakers() { return num_speakers_; }
 
@@ -34,6 +34,7 @@ class DiarizationModel : public OnnxModel {
   void Forward(const std::vector<float>& in_wav, std::vector<float>* posterior);
 
   float max_dur_;
+  float min_seg_;
   float threshold_;
   int num_speakers_;
 };

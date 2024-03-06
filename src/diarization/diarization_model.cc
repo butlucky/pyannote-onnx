@@ -11,16 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include "diarization/diarization_model.h"
-
 #include <cmath>
-
 #include "glog/logging.h"
 
 DiarizationModel::DiarizationModel(const std::string& model_path,
-                                   float threshold, float max_dur)
-    : OnnxModel(model_path), threshold_(threshold), max_dur_(max_dur) {
+                                   float threshold, float max_dur, float min_seg)
+    : OnnxModel(model_path), threshold_(threshold),
+      max_dur_(max_dur), min_seg_(min_seg) {
   //   num_speakers_
   Ort::TypeInfo type_info = session_->GetOutputTypeInfo(0);
   auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
@@ -28,6 +26,10 @@ DiarizationModel::DiarizationModel(const std::string& model_path,
   std::vector<int64_t> node_dims = tensor_info.GetShape();
   CHECK_EQ(node_dims.size(), 3);
   num_speakers_ = node_dims[2];
+  // printf node_dims
+  for (int i = 0; i < node_dims.size(); i++) {
+    LOG(INFO) << "node_dims[" << i << "]: " << node_dims[i];
+  }
 }
 
 void DiarizationModel::Forward(const std::vector<float>& audio,
@@ -49,6 +51,11 @@ void DiarizationModel::Forward(const std::vector<float>& audio,
 
   const float* outputs = ort_outputs[0].GetTensorData<float>();
   auto outputs_shape = ort_outputs[0].GetTensorTypeAndShapeInfo().GetShape();
+  CHECK_EQ(outputs_shape.size(), 3);
+  // print outputs_shape
+  for (int i = 0; i < outputs_shape.size(); i++) {
+      LOG(INFO) << "outputs_shape[" << i << "]: " << outputs_shape[i];
+  }
   int len = outputs_shape[1];
   posterior->assign(outputs, outputs + (batch_size * len * num_speakers_));
 }
@@ -77,11 +84,13 @@ float DiarizationModel::Diarization(const std::vector<float>& in_wav,
     // Conv1d               5       1
     // MaxPool1d            3       3
     // (L_{in} - 721) / 270 = L_{out}
+    float pos[num_speakers_];
     cur_pos = round(1.0 * ((i * 270) + 721) / SAMPLE_RATE * 1000) / 1000.0;
     for (int j = 0; j < num_speakers_; j++) {
       float p = posterior[i * num_speakers_ + j];
       std::vector<float>& start = start_pos->at(j);
       std::vector<float>& stop = stop_pos->at(j);
+      pos[j] = p;
 
       if (p > threshold_) {
         if (start.size() - stop.size() != 1) {
@@ -89,15 +98,26 @@ float DiarizationModel::Diarization(const std::vector<float>& in_wav,
         }
       } else {
         if (start.size() - stop.size() == 1) {
-          float break_pos = round((start.back() + max_dur_) * 1000) / 1000.0;
-          if (cur_pos > break_pos) {
-            stop.emplace_back(break_pos);
-            start.emplace_back(break_pos);
+          if (cur_pos - start.back() < min_seg_) {
+            LOG(INFO) << "Ignored too short seg[" << start.back() << "~"
+                << cur_pos << "]";
+            start.pop_back();
+          } else {
+            float break_pos = round((start.back() + max_dur_) * 1000) / 1000.0;
+            if (cur_pos > break_pos) {
+              stop.emplace_back(break_pos);
+              start.emplace_back(break_pos);
+            }
+            stop.emplace_back(cur_pos);
           }
-          stop.emplace_back(cur_pos);
         }
       }
     }
+    LOG(INFO) << "   [0] = " << pos[0]
+              << "   [1] = " << pos[1]
+              << "   [2] = " << pos[2]
+              << "   [3] = " << pos[3]
+              << "   pos = " << cur_pos;
   }
   return cur_pos;
 }

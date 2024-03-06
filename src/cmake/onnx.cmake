@@ -1,16 +1,12 @@
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v1.12.0/onnxruntime-win-x64-1.12.0.zip")
-  set(URL_HASH "SHA256=8b5d61204989350b7904ac277f5fbccd3e6736ddbb6ec001e412723d71c9c176")
+  set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-win-x64-1.17.0.zip")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v1.12.0/onnxruntime-linux-x64-1.12.0.tgz")
-  set(URL_HASH "SHA256=5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5")
+  set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-linux-x64-1.17.0.tgz")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
-    set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v1.12.0/onnxruntime-osx-arm64-1.12.0.tgz")
-    set(URL_HASH "SHA256=23117b6f5d7324d4a7c51184e5f808dd952aec411a6b99a1b6fd1011de06e300")
+    set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-osx-arm64-1.17.0.tgz")
   else()
-    set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v1.12.0/onnxruntime-osx-x86_64-1.12.0.tgz")
-    set(URL_HASH "SHA256=09b17f712f8c6f19bb63da35d508815b443cbb473e16c6192abfaa297c02f600")
+    set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-osx-x86_64-1.17.0.tgz")
   endif()
 else()
   message(FATAL_ERROR "Unsupported CMake System Name '${CMAKE_SYSTEM_NAME}' (expected 'Windows', 'Linux' or 'Darwin')")
@@ -18,7 +14,6 @@ endif()
 
 FetchContent_Declare(onnxruntime
   URL ${ONNX_URL}
-  URL_HASH ${URL_HASH}
 )
 FetchContent_MakeAvailable(onnxruntime)
 include_directories(${onnxruntime_SOURCE_DIR}/include)

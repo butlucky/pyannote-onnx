@@ -15,15 +15,16 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
-
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "gflags/gflags.h"
-
 #include "diarization/diarization_model.h"
 #include "frontend/resampler.h"
 #include "frontend/wav.h"
 
 DEFINE_string(wav_path, "", "wav path");
 DEFINE_double(max_dur, 20, "max duration of one segment in seconds");
+DEFINE_double(min_seg, 0.5, "min duration of one segment in seconds");
 DEFINE_double(threshold, 0.3, "threshold of speaker diarization");
 DEFINE_string(model_path, "", "speaker diarization model path");
 DEFINE_string(output_dir, "", "output dir for segment wavs");
@@ -32,8 +33,11 @@ DEFINE_string(output_dir, "", "output dir for segment wavs");
 
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
+  FLAGS_log_dir = "./log";
   google::InitGoogleLogging(argv[0]);
 
+  if(access("./log", F_OK) == -1)
+    mkdir("./log", 0777);
   wav::WavReader wav_reader(FLAGS_wav_path);
   int num_channels = wav_reader.num_channels();
   CHECK_EQ(num_channels, 1) << "Only support mono (1 channel) wav!";
@@ -54,7 +58,7 @@ int main(int argc, char* argv[]) {
 
   // 1. Speaker Diarization
   auto diarization = std::make_shared<DiarizationModel>(
-      FLAGS_model_path, FLAGS_threshold, FLAGS_max_dur);
+      FLAGS_model_path, FLAGS_threshold, FLAGS_max_dur, FLAGS_min_seg);
 
   std::vector<std::vector<float>> start_pos;
   std::vector<std::vector<float>> stop_pos;
@@ -64,7 +68,7 @@ int main(int argc, char* argv[]) {
     for (int j = 0; j < start_pos[i].size(); j++) {
       float start = start_pos[i][j];
       float stop = j < stop_pos[i].size() ? stop_pos[i][j] : dur;
-      LOG(INFO) << "Speaker#" << i << " segments#" << j << " [" << start << ", "
+      LOG(ERROR) << "Speaker#" << i << " segments#" << j << " [" << start << ", "
                 << stop << "]s.";
       // 4. Save segments from **original** wav to wavs
       if (!FLAGS_output_dir.empty()) {

@@ -51,14 +51,18 @@ OnnxModel::OnnxModel(const std::string& model_path) {
   int num_nodes = session_->GetInputCount();
   input_node_names_.resize(num_nodes);
   for (int i = 0; i < num_nodes; ++i) {
-    input_node_names_[i] = session_->GetInputName(i, allocator);
-    LOG(INFO) << "Input names[" << i << "]: " << input_node_names_[i];
+    auto input_name = session_->GetInputNameAllocated(i, allocator);
+    memcpy(&input_node_ptr_[i], input_name.get(), strlen(input_name.get()));
+    LOG(INFO) << "Input names[" << i << "]: " << input_name.get();
+    input_node_names_[i] = (const char *)&input_node_ptr_[i];
   }
   // Output info
   num_nodes = session_->GetOutputCount();
   output_node_names_.resize(num_nodes);
   for (int i = 0; i < num_nodes; ++i) {
-    output_node_names_[i] = session_->GetOutputName(i, allocator);
-    LOG(INFO) << "Output names[" << i << "]: " << output_node_names_[i];
+    auto output_name = session_->GetOutputNameAllocated(i, allocator);
+    memcpy(&output_node_ptr_[i], output_name.get(), strlen(output_name.get()));
+    LOG(INFO) << "Output names[" << i << "]: " << output_name.get();
+    output_node_names_[i] = (const char *)&output_node_ptr_[i];
   }
 }
