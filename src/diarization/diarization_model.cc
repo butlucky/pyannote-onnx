@@ -96,6 +96,9 @@ float DiarizationModel::Diarization(const std::vector<float>& in_wav,
         if (start.size() - stop.size() != 1) {
           start.emplace_back(cur_pos);
         }
+        if (i == len - 1) {
+          stop.emplace_back(cur_pos);
+        }
       } else {
         if (start.size() - stop.size() == 1) {
           if (cur_pos - start.back() < min_seg_) {

@@ -67,7 +67,8 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < num_speakers; i++) {
     for (int j = 0; j < start_pos[i].size(); j++) {
       float start = start_pos[i][j];
-      float stop = j < stop_pos[i].size() ? stop_pos[i][j] : dur;
+      float stop = stop_pos[i][j];
+
       LOG(ERROR) << "Speaker#" << i << " segments#" << j << " [" << start << ", "
                 << stop << "]s.";
       // 4. Save segments from **original** wav to wavs
